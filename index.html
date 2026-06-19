@@ -22,17 +22,92 @@
             </div>
           </header>
 
-          <label class="field-label" for="qrInput">Text</label>
-          <textarea id="qrInput" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <label class="field-label" for="contentType">Content type</label>
+          <select id="contentType" class="select-control">
+            <option value="text">Plain text</option>
+            <option value="url">URL</option>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+            <option value="sms">SMS</option>
+            <option value="wifi">Wi-Fi</option>
+          </select>
+
+          <div class="template-panel" id="templatePanel" hidden>
+            <div class="template-fields" data-template="url" hidden>
+              <label>
+                <span>URL</span>
+                <input id="urlValue" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com">
+              </label>
+            </div>
+
+            <div class="template-fields" data-template="email" hidden>
+              <label>
+                <span>Email address</span>
+                <input id="emailAddress" type="email" autocomplete="email" placeholder="name@example.com">
+              </label>
+              <label>
+                <span>Subject</span>
+                <input id="emailSubject" type="text" placeholder="Optional">
+              </label>
+              <label class="full-span">
+                <span>Body</span>
+                <textarea id="emailBody" class="template-textarea" placeholder="Optional"></textarea>
+              </label>
+            </div>
+
+            <div class="template-fields" data-template="phone" hidden>
+              <label>
+                <span>Phone number</span>
+                <input id="phoneNumber" type="tel" autocomplete="tel" placeholder="+1 555 0100">
+              </label>
+            </div>
+
+            <div class="template-fields" data-template="sms" hidden>
+              <label>
+                <span>Phone number</span>
+                <input id="smsNumber" type="tel" autocomplete="tel" placeholder="+1 555 0100">
+              </label>
+              <label class="full-span">
+                <span>Message</span>
+                <textarea id="smsMessage" class="template-textarea" placeholder="Optional"></textarea>
+              </label>
+            </div>
+
+            <div class="template-fields" data-template="wifi" hidden>
+              <label>
+                <span>Network name</span>
+                <input id="wifiSsid" type="text" autocomplete="off" placeholder="SSID">
+              </label>
+              <label>
+                <span>Password</span>
+                <input id="wifiPassword" type="text" autocomplete="off" placeholder="Optional">
+              </label>
+              <label>
+                <span>Security</span>
+                <select id="wifiSecurity" class="select-control">
+                  <option value="WPA">WPA/WPA2</option>
+                  <option value="WEP">WEP</option>
+                  <option value="nopass">None</option>
+                </select>
+              </label>
+              <label class="checkbox-control">
+                <input id="wifiHidden" type="checkbox">
+                <span>Hidden network</span>
+              </label>
+            </div>
+          </div>
+
+          <label class="field-label" for="qrInput">QR content</label>
+          <textarea id="qrInput" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste a URL, contact info, Wi-Fi details, or any text"></textarea>
 
           <div class="controls-grid">
             <fieldset class="control-group">
               <legend>Error correction</legend>
               <div class="segmented" role="radiogroup" aria-label="Error correction level">
-                <label><input type="radio" name="ecc" value="L"> L</label>
-                <label><input type="radio" name="ecc" value="M" checked> M</label>
-                <label><input type="radio" name="ecc" value="Q"> Q</label>
-                <label><input type="radio" name="ecc" value="H"> H</label>
+                <label><input type="radio" name="ecc" value="L"> Low</label>
+                <label><input type="radio" name="ecc" value="M" checked> Medium</label>
+                <label><input type="radio" name="ecc" value="Q"> Quartile</label>
+                <label><input type="radio" name="ecc" value="H"> High</label>
               </div>
             </fieldset>
 
@@ -50,12 +125,12 @@
 
             <div class="swatches" aria-label="QR colors">
               <label>
-                <span>Foreground</span>
-                <input id="foregroundInput" type="color" value="#111827">
+                <span>QR foreground</span>
+                <input id="foregroundInput" type="color" value="#111827" aria-label="QR foreground color">
               </label>
               <label>
-                <span>Background</span>
-                <input id="backgroundInput" type="color" value="#f8fafc">
+                <span>QR background</span>
+                <input id="backgroundInput" type="color" value="#f8fafc" aria-label="QR background color">
               </label>
             </div>
           </div>
@@ -63,21 +138,26 @@
 
         <aside class="preview-pane" aria-label="Generated QR code">
           <div class="preview-toolbar">
-            <div class="stat-line" id="statLine">Ready</div>
+            <div class="stat-line" id="statLine" aria-live="polite">Ready</div>
             <button class="ghost-button" id="clearButton" type="button">Clear</button>
           </div>
           <div class="qr-stage" id="qrStage">
             <div id="qrCode" aria-live="polite"></div>
           </div>
+          <ul class="scan-status" id="scanStatus" aria-live="polite"></ul>
           <p class="message" id="message" role="status"></p>
+          <div class="share-link-panel">
+            <label for="shareUrlInput">Share URL</label>
+            <input id="shareUrlInput" type="text" readonly>
+          </div>
           <div class="actions">
-            <button id="copyImageButton" type="button">Copy Image</button>
-            <button id="downloadSvgButton" type="button">Download SVG</button>
-            <button id="downloadPngButton" type="button">Download PNG</button>
+            <button id="copyImageButton" type="button" title="Generate a QR code first">Copy Image</button>
+            <button id="downloadSvgButton" type="button" title="Generate a QR code first">Download SVG</button>
+            <button id="downloadPngButton" type="button" title="Generate a QR code first">Download PNG</button>
           </div>
           <div class="share-actions" id="shareActions" aria-label="Share view options" hidden>
-            <button class="ghost-button" id="editSharedButton" type="button">Edit</button>
-            <button class="ghost-button" id="makeYourOwnButton" type="button">Make Your Own</button>
+            <button class="ghost-button" id="editSharedButton" type="button">Edit QR</button>
+            <button class="ghost-button" id="makeYourOwnButton" type="button">New QR</button>
           </div>
         </aside>
       </section>

@@ -27,6 +27,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -101,7 +102,7 @@ button:disabled {
 
 .preview-pane {
   display: grid;
-  grid-template-rows: auto minmax(260px, 1fr) auto auto;
+  grid-template-rows: auto minmax(260px, 1fr) auto auto auto auto;
   gap: 16px;
   background: var(--panel-strong);
 }
@@ -136,6 +137,8 @@ h1 {
 
 .field-label,
 legend,
+.template-fields span,
+.share-link-panel label,
 .slider-control span,
 .swatches span {
   display: block;
@@ -163,12 +166,101 @@ textarea {
   outline: none;
 }
 
+textarea.generated-content {
+  color: #475569;
+  background: #f8fafc;
+}
+
 textarea:focus,
+select:focus-visible,
 input[type="range"]:focus-visible,
 input[type="color"]:focus-visible,
 button:focus-visible {
   outline: 3px solid rgba(15, 118, 110, 0.24);
   outline-offset: 2px;
+}
+
+.select-control {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.template-panel {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+}
+
+.template-panel[hidden],
+.template-fields[hidden] {
+  display: none;
+}
+
+.template-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.template-fields label {
+  min-width: 0;
+}
+
+.template-fields input[type="text"],
+.template-fields input[type="email"],
+.template-fields input[type="tel"],
+.template-fields input[type="url"],
+.share-link-panel input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.template-fields input:focus-visible,
+.template-fields textarea:focus-visible,
+.share-link-panel input:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.24);
+  outline-offset: 2px;
+}
+
+.template-textarea {
+  min-height: 86px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.checkbox-control {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.checkbox-control input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.checkbox-control span {
+  margin: 0;
+  text-transform: none;
 }
 
 .controls-grid {
@@ -196,9 +288,11 @@ button:focus-visible {
 
 .segmented label {
   min-height: 42px;
+  padding: 0 8px;
   display: grid;
   place-items: center;
   border-right: 1px solid var(--line);
+  text-align: center;
   cursor: pointer;
 }
 
@@ -214,6 +308,11 @@ button:focus-visible {
 .segmented label:has(input:checked) {
   color: #ffffff;
   background: #334155;
+}
+
+.segmented label:has(input:focus-visible) {
+  outline: 3px solid rgba(15, 118, 110, 0.24);
+  outline-offset: -3px;
 }
 
 .slider-control {
@@ -272,6 +371,7 @@ input[type="color"] {
 
 #qrCode {
   width: min(100%, 560px);
+  min-height: 180px;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -285,6 +385,51 @@ input[type="color"] {
   filter: drop-shadow(0 12px 22px rgba(15, 23, 42, 0.14));
 }
 
+.empty-state {
+  max-width: 18rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.scan-status {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.scan-status li {
+  min-height: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.scan-status li::before {
+  width: 0.72rem;
+  height: 0.72rem;
+  margin-top: 0.25rem;
+  border-radius: 50%;
+  content: "";
+  flex: 0 0 auto;
+}
+
+.scan-status .ok::before {
+  background: var(--accent);
+}
+
+.scan-status .warn {
+  color: #854d0e;
+}
+
+.scan-status .warn::before {
+  background: #d97706;
+}
+
 .message {
   min-height: 1.35em;
   font-size: 0.92rem;
@@ -292,6 +437,15 @@ input[type="color"] {
 
 .message.error {
   color: var(--danger);
+}
+
+.share-link-panel {
+  display: grid;
+  gap: 7px;
+}
+
+.share-link-panel input {
+  color: #475569;
 }
 
 .actions {
@@ -374,6 +528,10 @@ body.share-mode .share-actions:not([hidden]) {
     grid-template-columns: 1fr;
   }
 
+  .preview-pane {
+    order: -1;
+  }
+
   textarea {
     min-height: 170px;
   }
@@ -398,6 +556,10 @@ body.share-mode .share-actions:not([hidden]) {
   }
 
   .swatches {
+    grid-template-columns: 1fr;
+  }
+
+  .template-fields {
     grid-template-columns: 1fr;
   }
 }
