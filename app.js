@@ -11,6 +11,7 @@
   const backgroundInput = document.getElementById("backgroundInput");
   const sampleButton = document.getElementById("sampleButton");
   const clearButton = document.getElementById("clearButton");
+  const copyImageButton = document.getElementById("copyImageButton");
   const downloadSvgButton = document.getElementById("downloadSvgButton");
   const downloadPngButton = document.getElementById("downloadPngButton");
 
@@ -103,6 +104,7 @@
       statLine.textContent = "No text";
       message.textContent = "";
       message.classList.remove("error");
+      copyImageButton.disabled = true;
       downloadSvgButton.disabled = true;
       downloadPngButton.disabled = true;
       return;
@@ -122,6 +124,7 @@
       statLine.textContent = `${qr.getModuleCount()} modules · ${byteLength(value)} bytes`;
       message.textContent = "";
       message.classList.remove("error");
+      copyImageButton.disabled = false;
       downloadSvgButton.disabled = false;
       downloadPngButton.disabled = false;
     } catch (error) {
@@ -130,6 +133,7 @@
       statLine.textContent = "Too much data";
       message.textContent = "Reduce the text length or choose a lower correction level.";
       message.classList.add("error");
+      copyImageButton.disabled = true;
       downloadSvgButton.disabled = true;
       downloadPngButton.disabled = true;
     }
@@ -151,33 +155,79 @@
     downloadBlob(new Blob([currentSvg], { type: "image/svg+xml" }), `${currentFilename}.svg`);
   }
 
-  function downloadPng() {
+  function svgToPngBlob() {
+    const size = Number(sizeInput.value);
+
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const svgBlob = new Blob([currentSvg], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(svgBlob);
+
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("PNG export failed."));
+          }
+        }, "image/png");
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("PNG export failed."));
+      };
+
+      image.src = url;
+    });
+  }
+
+  async function downloadPng() {
     if (!currentSvg) return;
 
-    const size = Number(sizeInput.value);
-    const image = new Image();
-    const svgBlob = new Blob([currentSvg], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(svgBlob);
-
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const context = canvas.getContext("2d");
-      context.drawImage(image, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      canvas.toBlob((blob) => {
-        if (blob) downloadBlob(blob, `${currentFilename}.png`);
-      }, "image/png");
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      message.textContent = "PNG export failed.";
+    try {
+      const blob = await svgToPngBlob();
+      downloadBlob(blob, `${currentFilename}.png`);
+    } catch (error) {
+      message.textContent = error.message;
       message.classList.add("error");
-    };
+    }
+  }
 
-    image.src = url;
+  async function copyImage() {
+    if (!currentSvg) return;
+
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      message.textContent = "Image clipboard copy is not supported in this browser.";
+      message.classList.add("error");
+      return;
+    }
+
+    copyImageButton.disabled = true;
+    copyImageButton.textContent = "Copying...";
+
+    try {
+      const blob = await svgToPngBlob();
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob
+        })
+      ]);
+      message.textContent = "QR image copied to clipboard.";
+      message.classList.remove("error");
+    } catch (error) {
+      message.textContent = "Clipboard copy was blocked by the browser.";
+      message.classList.add("error");
+    } finally {
+      copyImageButton.disabled = false;
+      copyImageButton.textContent = "Copy Image";
+    }
   }
 
   input.addEventListener("input", render);
@@ -198,6 +248,7 @@
     input.focus();
     render();
   });
+  copyImageButton.addEventListener("click", copyImage);
   downloadSvgButton.addEventListener("click", downloadSvg);
   downloadPngButton.addEventListener("click", downloadPng);
 

@@ -7,6 +7,7 @@ A static, client-side QR code maker that can be hosted from GitHub Pages or any 
 - Generates QR codes entirely in the browser
 - No server, build step, or runtime CDN dependency
 - Adjustable error correction, size, margin, and colors
+- Copy generated QR codes to the clipboard as PNG images
 - SVG and PNG downloads
 
 ## Local Use
