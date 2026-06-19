@@ -1,0 +1,22 @@
+# QR Code Maker
+
+A static, client-side QR code maker that can be hosted from GitHub Pages or any plain static file host.
+
+## Features
+
+- Generates QR codes entirely in the browser
+- No server, build step, or runtime CDN dependency
+- Adjustable error correction, size, margin, and colors
+- SVG and PNG downloads
+
+## Local Use
+
+Open `index.html` in a browser.
+
+## GitHub Pages
+
+Serve the repository from the root of the default branch in the repository Pages settings.
+
+## Vendor
+
+QR encoding is provided by `qrcode-generator` v1.4.4 by Kazuhiko Arase, licensed MIT.

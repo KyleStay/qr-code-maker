@@ -1,0 +1,350 @@
+:root {
+  --bg: #e9eef2;
+  --panel: #ffffff;
+  --panel-strong: #f8fafc;
+  --ink: #172033;
+  --muted: #657085;
+  --line: #cfd8e3;
+  --accent: #0f766e;
+  --accent-strong: #115e59;
+  --danger: #b42318;
+  --shadow: 0 22px 70px rgba(23, 32, 51, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.10), rgba(180, 83, 9, 0.07)),
+    var(--bg);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  min-height: 42px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  padding: 0 16px;
+  color: #ffffff;
+  background: var(--accent);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.ghost-button {
+  color: var(--ink);
+  background: #ffffff;
+  border-color: var(--line);
+}
+
+.ghost-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: #334155;
+  border-color: #334155;
+}
+
+.app-shell {
+  width: min(1180px, calc(100vw - 32px));
+  min-height: 100vh;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 32px 0;
+}
+
+.workspace {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.86fr);
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(100, 116, 139, 0.28);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.editor-pane,
+.preview-pane {
+  min-width: 0;
+  padding: 28px;
+}
+
+.editor-pane {
+  border-right: 1px solid var(--line);
+}
+
+.preview-pane {
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) auto auto;
+  gap: 16px;
+  background: var(--panel-strong);
+}
+
+.topbar,
+.preview-toolbar,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(1.7rem, 3vw, 2.45rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.topbar p,
+.message,
+.stat-line {
+  color: var(--muted);
+}
+
+.field-label,
+legend,
+.slider-control span,
+.swatches span {
+  display: block;
+  margin-bottom: 8px;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.field-label {
+  margin-top: 28px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 16px;
+  color: var(--ink);
+  background: #ffffff;
+  line-height: 1.45;
+  outline: none;
+}
+
+textarea:focus,
+input[type="range"]:focus-visible,
+input[type="color"]:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.24);
+  outline-offset: 2px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.control-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.segmented label {
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.segmented label:last-child {
+  border-right: 0;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+}
+
+.segmented label:has(input:checked) {
+  color: #ffffff;
+  background: #334155;
+}
+
+.slider-control {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 12px;
+  align-items: center;
+}
+
+.slider-control input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+output {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.swatches label {
+  min-width: 0;
+}
+
+input[type="color"] {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.qr-stage {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #b8c4d2;
+  border-radius: 8px;
+  background:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.16) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(148, 163, 184, 0.16) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.16) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.16) 75%),
+    #ffffff;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+}
+
+#qrCode {
+  width: min(100%, 560px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+#qrCode svg {
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  display: block;
+  filter: drop-shadow(0 12px 22px rgba(15, 23, 42, 0.14));
+}
+
+.message {
+  min-height: 1.35em;
+  font-size: 0.92rem;
+}
+
+.message.error {
+  color: var(--danger);
+}
+
+.actions {
+  justify-content: stretch;
+}
+
+.actions button {
+  flex: 1 1 0;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    width: min(100vw - 20px, 680px);
+    padding: 10px 0;
+    place-items: start center;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-pane {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-pane,
+  .preview-pane {
+    padding: 20px;
+  }
+
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  textarea {
+    min-height: 170px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar,
+  .preview-toolbar,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .topbar button,
+  .preview-toolbar button,
+  .actions button {
+    width: 100%;
+  }
+
+  .swatches {
+    grid-template-columns: 1fr;
+  }
+}

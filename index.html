@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Client-Side QR Code Maker</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="QR code maker">
+        <div class="editor-pane">
+          <header class="topbar">
+            <div>
+              <h1>QR Code Maker</h1>
+              <p>Static, browser-only QR generation.</p>
+            </div>
+            <button class="ghost-button" id="sampleButton" type="button">Sample</button>
+          </header>
+
+          <label class="field-label" for="qrInput">Text</label>
+          <textarea id="qrInput" spellcheck="false" autocomplete="off" autocapitalize="off">https://example.com</textarea>
+
+          <div class="controls-grid">
+            <fieldset class="control-group">
+              <legend>Error correction</legend>
+              <div class="segmented" role="radiogroup" aria-label="Error correction level">
+                <label><input type="radio" name="ecc" value="L"> L</label>
+                <label><input type="radio" name="ecc" value="M" checked> M</label>
+                <label><input type="radio" name="ecc" value="Q"> Q</label>
+                <label><input type="radio" name="ecc" value="H"> H</label>
+              </div>
+            </fieldset>
+
+            <label class="slider-control" for="sizeInput">
+              <span>Size</span>
+              <output id="sizeOutput" for="sizeInput">512</output>
+              <input id="sizeInput" type="range" min="160" max="1024" step="16" value="512">
+            </label>
+
+            <label class="slider-control" for="marginInput">
+              <span>Margin</span>
+              <output id="marginOutput" for="marginInput">4</output>
+              <input id="marginInput" type="range" min="0" max="10" step="1" value="4">
+            </label>
+
+            <div class="swatches" aria-label="QR colors">
+              <label>
+                <span>Foreground</span>
+                <input id="foregroundInput" type="color" value="#111827">
+              </label>
+              <label>
+                <span>Background</span>
+                <input id="backgroundInput" type="color" value="#f8fafc">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <aside class="preview-pane" aria-label="Generated QR code">
+          <div class="preview-toolbar">
+            <div class="stat-line" id="statLine">Ready</div>
+            <button class="ghost-button" id="clearButton" type="button">Clear</button>
+          </div>
+          <div class="qr-stage" id="qrStage">
+            <div id="qrCode" aria-live="polite"></div>
+          </div>
+          <p class="message" id="message" role="status"></p>
+          <div class="actions">
+            <button id="downloadSvgButton" type="button">Download SVG</button>
+            <button id="downloadPngButton" type="button">Download PNG</button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="qrcode.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
