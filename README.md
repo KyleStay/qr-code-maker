@@ -22,10 +22,12 @@ The app syncs the QR text into the `text` query parameter:
 https://kylestay.github.io/qr-code-maker/?text=Hello%20world
 ```
 
+When other query parameters are present, `text` is always written last so it remains easy to edit by hand.
+
 Add `mode=share` for a compact QR-only view with copy and download actions:
 
 ```text
-https://kylestay.github.io/qr-code-maker/?text=Hello%20world&mode=share
+https://kylestay.github.io/qr-code-maker/?mode=share&text=Hello%20world
 ```
 
 ## GitHub Pages

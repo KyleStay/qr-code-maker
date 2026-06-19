@@ -21,7 +21,7 @@
 
   const sampleText = "https://github.com/new";
   const urlState = new URL(window.location.href);
-  const startingText = urlState.searchParams.get("text");
+  const startingText = textFromUrl(urlState);
   const isShareMode = urlState.searchParams.get("mode") === "share";
   let currentSvg = "";
   let currentFilename = "qr-code";
@@ -69,35 +69,56 @@
     });
   }
 
+  function decodeQueryValue(value) {
+    try {
+      return decodeURIComponent(value.replace(/\+/g, " "));
+    } catch (error) {
+      return value;
+    }
+  }
+
+  function textFromUrl(url) {
+    const query = url.search.slice(1);
+    const textMarker = "text=";
+    const textIndex = query.indexOf(textMarker);
+
+    if (textIndex === -1) {
+      return null;
+    }
+
+    return decodeQueryValue(query.slice(textIndex + textMarker.length));
+  }
+
+  function setTextLast(url, value) {
+    url.searchParams.delete("text");
+
+    if (value) {
+      url.searchParams.append("text", value);
+    }
+  }
+
   function updateUrlState(options = {}) {
     const nextUrl = new URL(window.location.href);
     const value = input.value;
     const mode = options.mode || nextUrl.searchParams.get("mode");
 
-    if (value) {
-      nextUrl.searchParams.set("text", value);
-    } else {
-      nextUrl.searchParams.delete("text");
-    }
+    nextUrl.search = "";
 
     if (mode === "share") {
       nextUrl.searchParams.set("mode", "share");
-    } else {
-      nextUrl.searchParams.delete("mode");
     }
 
+    setTextLast(nextUrl, value);
     window.history.replaceState(null, "", nextUrl);
   }
 
   function openFullView(options = {}) {
     const nextUrl = new URL(window.location.href);
 
-    nextUrl.searchParams.delete("mode");
+    nextUrl.search = "";
 
-    if (options.reset) {
-      nextUrl.searchParams.delete("text");
-    } else if (input.value) {
-      nextUrl.searchParams.set("text", input.value);
+    if (!options.reset && input.value) {
+      setTextLast(nextUrl, input.value);
     }
 
     window.location.href = nextUrl.toString();
@@ -107,13 +128,9 @@
     const nextUrl = new URL(window.location.href);
     const value = input.value;
 
-    if (value) {
-      nextUrl.searchParams.set("text", value);
-    } else {
-      nextUrl.searchParams.delete("text");
-    }
-
+    nextUrl.search = "";
     nextUrl.searchParams.set("mode", "share");
+    setTextLast(nextUrl, value);
     return nextUrl.toString();
   }
 
