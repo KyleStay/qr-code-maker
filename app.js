@@ -19,12 +19,13 @@
   const wifiSecurity = document.getElementById("wifiSecurity");
   const wifiHidden = document.getElementById("wifiHidden");
   const sizeInput = document.getElementById("sizeInput");
-  const sizeOutput = document.getElementById("sizeOutput");
+  const sizePresetInputs = Array.from(document.querySelectorAll("input[name='sizePreset']"));
   const marginInput = document.getElementById("marginInput");
   const marginOutput = document.getElementById("marginOutput");
   const foregroundInput = document.getElementById("foregroundInput");
   const backgroundInput = document.getElementById("backgroundInput");
-  const sampleButton = document.getElementById("sampleButton");
+  const transparentBackgroundInput = document.getElementById("transparentBackgroundInput");
+  const exampleButton = document.getElementById("exampleButton");
   const shareViewButton = document.getElementById("shareViewButton");
   const clearButton = document.getElementById("clearButton");
   const copyImageButton = document.getElementById("copyImageButton");
@@ -35,8 +36,10 @@
   const makeYourOwnButton = document.getElementById("makeYourOwnButton");
   const shareUrlInput = document.getElementById("shareUrlInput");
 
-  const sampleText = "https://github.com/new";
-  const settingParamNames = ["ecc", "size", "margin", "fg", "bg"];
+  const exampleText = "https://example.com";
+  const settingParamNames = ["ecc", "size", "margin", "fg", "bg", "transparent"];
+  const minSize = Number(sizeInput.min);
+  const maxSize = Number(sizeInput.max);
   const urlState = new URL(window.location.href);
   const startingText = textFromUrl(urlState);
   const isShareMode = urlState.searchParams.get("mode") === "share";
@@ -91,19 +94,33 @@
     return Math.min(max, Math.max(min, number));
   }
 
+  function currentSize() {
+    return clampNumber(sizeInput.value, minSize, maxSize) || 512;
+  }
+
+  function setSize(value) {
+    const size = Math.round(clampNumber(value, minSize, maxSize) || 512);
+    sizeInput.value = String(size);
+    sizePresetInputs.forEach((control) => {
+      control.checked = Number(control.value) === size;
+    });
+    return size;
+  }
+
   function restoreSettings(url) {
     const ecc = url.searchParams.get("ecc");
     const size = clampNumber(url.searchParams.get("size"), Number(sizeInput.min), Number(sizeInput.max));
     const margin = clampNumber(url.searchParams.get("margin"), Number(marginInput.min), Number(marginInput.max));
     const foreground = normalizeHexColor(url.searchParams.get("fg"));
     const background = normalizeHexColor(url.searchParams.get("bg"));
+    const transparent = url.searchParams.get("transparent");
 
     if (["L", "M", "Q", "H"].includes(ecc)) {
       document.querySelector(`input[name='ecc'][value='${ecc}']`).checked = true;
     }
 
     if (size !== null) {
-      sizeInput.value = String(Math.round(size / Number(sizeInput.step)) * Number(sizeInput.step));
+      setSize(size);
     }
 
     if (margin !== null) {
@@ -117,6 +134,8 @@
     if (background) {
       backgroundInput.value = background;
     }
+
+    transparentBackgroundInput.checked = transparent === "1" || transparent === "true";
   }
 
   function safeFilename(value) {
@@ -166,10 +185,14 @@
 
   function setSettingsParams(url) {
     url.searchParams.set("ecc", selectedEcc());
-    url.searchParams.set("size", sizeInput.value);
+    url.searchParams.set("size", String(currentSize()));
     url.searchParams.set("margin", marginInput.value);
     url.searchParams.set("fg", foregroundInput.value);
     url.searchParams.set("bg", backgroundInput.value);
+
+    if (transparentBackgroundInput.checked) {
+      url.searchParams.set("transparent", "1");
+    }
   }
 
   function hasSettingParams(url) {
@@ -364,7 +387,9 @@
     const total = moduleCount + quiet * 2;
     const foreground = options.foreground;
     const background = options.background;
+    const transparent = options.transparent;
     const rects = [];
+    const backgroundRect = transparent ? "" : `<rect width="100%" height="100%" fill="${escapeXml(background)}"/>`;
 
     for (let row = 0; row < moduleCount; row += 1) {
       let start = null;
@@ -387,7 +412,7 @@
 
     return [
       `<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Generated QR code" viewBox="0 0 ${total} ${total}" width="${options.size}" height="${options.size}" shape-rendering="crispEdges">`,
-      `<rect width="100%" height="100%" fill="${escapeXml(background)}"/>`,
+      backgroundRect,
       `<g fill="${escapeXml(foreground)}">`,
       rects.join(""),
       "</g>",
@@ -455,13 +480,19 @@
 
   function scannabilityItems(value, qr) {
     const items = [];
+    const transparent = transparentBackgroundInput.checked;
     const ratio = contrastRatio(foregroundInput.value, backgroundInput.value);
     const foregroundLum = relativeLuminance(hexToRgb(foregroundInput.value));
-    const backgroundLum = relativeLuminance(hexToRgb(backgroundInput.value));
+    const backgroundLum = transparent ? null : relativeLuminance(hexToRgb(backgroundInput.value));
     const margin = Number(marginInput.value);
     const bytes = byteLength(value);
 
-    if (foregroundLum >= backgroundLum) {
+    if (transparent) {
+      items.push({
+        type: "warn",
+        text: "Transparent exports depend on the surface behind the QR. Place on a plain, high-contrast background."
+      });
+    } else if (foregroundLum >= backgroundLum) {
       items.push({
         type: "warn",
         text: "Use a darker QR foreground than background for more reliable scans."
@@ -501,12 +532,13 @@
   function render() {
     const value = input.value;
     const trimmed = value.trim();
-    const size = Number(sizeInput.value);
+    const size = setSize(sizeInput.value);
     const margin = Number(marginInput.value);
 
-    sizeOutput.value = size;
     marginOutput.value = margin;
     currentFilename = safeFilename(trimmed);
+    backgroundInput.disabled = transparentBackgroundInput.checked;
+    backgroundInput.setAttribute("aria-disabled", String(transparentBackgroundInput.checked));
 
     if (!trimmed) {
       currentSvg = "";
@@ -528,7 +560,8 @@
         size,
         margin,
         foreground: foregroundInput.value,
-        background: backgroundInput.value
+        background: backgroundInput.value,
+        transparent: transparentBackgroundInput.checked
       });
       qrCode.innerHTML = currentSvg;
       statLine.textContent = `${qr.getModuleCount()} modules · ${byteLength(value)} bytes`;
@@ -566,7 +599,7 @@
   }
 
   function svgToPngBlob() {
-    const size = Number(sizeInput.value);
+    const size = currentSize();
 
     return new Promise((resolve, reject) => {
       const image = new Image();
@@ -578,6 +611,7 @@
         canvas.width = size;
         canvas.height = size;
         const context = canvas.getContext("2d");
+        context.clearRect(0, 0, size, size);
         context.drawImage(image, 0, 0, size, size);
         URL.revokeObjectURL(url);
         canvas.toBlob((blob) => {
@@ -657,17 +691,36 @@
     control.addEventListener("input", syncTemplateText);
     control.addEventListener("change", syncTemplateText);
   });
-  sizeInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
+  sizePresetInputs.forEach((control) => {
+    control.addEventListener("change", () => {
+      setSize(control.value);
+      renderAndSyncUrl({ includeSettings: true });
+    });
+  });
+  sizeInput.addEventListener("input", () => {
+    sizePresetInputs.forEach((control) => {
+      control.checked = Number(control.value) === Number(sizeInput.value);
+    });
+
+    if (sizeInput.validity.valid) {
+      renderAndSyncUrl({ includeSettings: true });
+    }
+  });
+  sizeInput.addEventListener("change", () => {
+    setSize(sizeInput.value);
+    renderAndSyncUrl({ includeSettings: true });
+  });
   marginInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
   foregroundInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
   backgroundInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
+  transparentBackgroundInput.addEventListener("change", () => renderAndSyncUrl({ includeSettings: true }));
   document.querySelectorAll("input[name='ecc']").forEach((radio) => {
     radio.addEventListener("change", () => renderAndSyncUrl({ includeSettings: true }));
   });
-  sampleButton.addEventListener("click", () => {
+  exampleButton.addEventListener("click", () => {
     contentType.value = "text";
     updateTemplateVisibility();
-    input.value = sampleText;
+    input.value = exampleText;
     input.focus();
     renderAndSyncUrl();
   });

@@ -17,7 +17,7 @@
               <p>Static, browser-only QR generation.</p>
             </div>
             <div class="topbar-actions">
-              <button class="ghost-button" id="sampleButton" type="button">Sample</button>
+              <button class="ghost-button" id="exampleButton" type="button">Example</button>
               <button class="ghost-button" id="shareViewButton" type="button">Copy Share Link</button>
             </div>
           </header>
@@ -111,11 +111,20 @@
               </div>
             </fieldset>
 
-            <label class="slider-control" for="sizeInput">
-              <span>Size</span>
-              <output id="sizeOutput" for="sizeInput">512</output>
-              <input id="sizeInput" type="range" min="160" max="1024" step="16" value="512">
-            </label>
+            <fieldset class="control-group size-control">
+              <legend>Export size</legend>
+              <div class="segmented size-presets" role="radiogroup" aria-label="Export size presets">
+                <label><input type="radio" name="sizePreset" value="256"> 256</label>
+                <label><input type="radio" name="sizePreset" value="512" checked> 512</label>
+                <label><input type="radio" name="sizePreset" value="1024"> 1024</label>
+                <label><input type="radio" name="sizePreset" value="2048"> 2048</label>
+                <label><input type="radio" name="sizePreset" value="4096"> 4096</label>
+              </div>
+              <label class="number-control" for="sizeInput">
+                <span>Custom px</span>
+                <input id="sizeInput" type="number" min="160" max="4096" step="1" value="512" inputmode="numeric">
+              </label>
+            </fieldset>
 
             <label class="slider-control" for="marginInput">
               <span>Margin</span>
@@ -131,6 +140,10 @@
               <label>
                 <span>QR background</span>
                 <input id="backgroundInput" type="color" value="#f8fafc" aria-label="QR background color">
+              </label>
+              <label class="checkbox-control transparent-control">
+                <input id="transparentBackgroundInput" type="checkbox">
+                <span>Transparent background</span>
               </label>
             </div>
           </div>
