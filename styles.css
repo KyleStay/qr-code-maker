@@ -107,6 +107,7 @@ button:disabled {
 }
 
 .topbar,
+.topbar-actions,
 .preview-toolbar,
 .actions {
   display: flex;
@@ -300,6 +301,32 @@ input[type="color"] {
   flex: 1 1 0;
 }
 
+body.share-mode .app-shell {
+  width: min(680px, calc(100vw - 32px));
+}
+
+body.share-mode .workspace {
+  display: block;
+}
+
+body.share-mode .editor-pane,
+body.share-mode .preview-toolbar {
+  display: none;
+}
+
+body.share-mode .preview-pane {
+  grid-template-rows: auto auto auto;
+  min-height: auto;
+}
+
+body.share-mode #qrCode {
+  width: min(100%, 620px);
+}
+
+body.share-mode .qr-stage {
+  min-height: auto;
+}
+
 @media (max-width: 860px) {
   .app-shell {
     width: min(100vw - 20px, 680px);
@@ -332,6 +359,7 @@ input[type="color"] {
 
 @media (max-width: 480px) {
   .topbar,
+  .topbar-actions,
   .preview-toolbar,
   .actions {
     align-items: stretch;
@@ -339,6 +367,7 @@ input[type="color"] {
   }
 
   .topbar button,
+  .topbar-actions button,
   .preview-toolbar button,
   .actions button {
     width: 100%;

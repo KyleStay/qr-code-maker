@@ -14,6 +14,20 @@ A static, client-side QR code maker that can be hosted from GitHub Pages or any 
 
 Open `index.html` in a browser.
 
+## Shareable URLs
+
+The app syncs the QR text into the `text` query parameter:
+
+```text
+https://kylestay.github.io/qr-code-maker/?text=Hello%20world
+```
+
+Add `mode=share` for a compact QR-only view with copy and download actions:
+
+```text
+https://kylestay.github.io/qr-code-maker/?text=Hello%20world&mode=share
+```
+
 ## GitHub Pages
 
 Serve the repository from the root of the default branch in the repository Pages settings.

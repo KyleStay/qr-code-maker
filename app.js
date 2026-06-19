@@ -10,14 +10,25 @@
   const foregroundInput = document.getElementById("foregroundInput");
   const backgroundInput = document.getElementById("backgroundInput");
   const sampleButton = document.getElementById("sampleButton");
+  const shareViewButton = document.getElementById("shareViewButton");
   const clearButton = document.getElementById("clearButton");
   const copyImageButton = document.getElementById("copyImageButton");
   const downloadSvgButton = document.getElementById("downloadSvgButton");
   const downloadPngButton = document.getElementById("downloadPngButton");
 
   const sampleText = "https://github.com/new";
+  const urlState = new URL(window.location.href);
+  const startingText = urlState.searchParams.get("text");
+  const isShareMode = urlState.searchParams.get("mode") === "share";
   let currentSvg = "";
   let currentFilename = "qr-code";
+  let urlUpdateTimer = 0;
+
+  if (startingText !== null) {
+    input.value = startingText;
+  }
+
+  document.body.classList.toggle("share-mode", isShareMode);
 
   function selectedEcc() {
     return document.querySelector("input[name='ecc']:checked").value;
@@ -49,6 +60,31 @@
         "'": "&apos;"
       }[char];
     });
+  }
+
+  function updateUrlState(options = {}) {
+    const nextUrl = new URL(window.location.href);
+    const value = input.value;
+    const mode = options.mode || nextUrl.searchParams.get("mode");
+
+    if (value) {
+      nextUrl.searchParams.set("text", value);
+    } else {
+      nextUrl.searchParams.delete("text");
+    }
+
+    if (mode === "share") {
+      nextUrl.searchParams.set("mode", "share");
+    } else {
+      nextUrl.searchParams.delete("mode");
+    }
+
+    window.history.replaceState(null, "", nextUrl);
+  }
+
+  function scheduleUrlUpdate() {
+    window.clearTimeout(urlUpdateTimer);
+    urlUpdateTimer = window.setTimeout(updateUrlState, 120);
   }
 
   function buildSvg(qr, options) {
@@ -230,7 +266,10 @@
     }
   }
 
-  input.addEventListener("input", render);
+  input.addEventListener("input", () => {
+    render();
+    scheduleUrlUpdate();
+  });
   sizeInput.addEventListener("input", render);
   marginInput.addEventListener("input", render);
   foregroundInput.addEventListener("input", render);
@@ -242,11 +281,17 @@
     input.value = sampleText;
     input.focus();
     render();
+    updateUrlState();
+  });
+  shareViewButton.addEventListener("click", () => {
+    updateUrlState({ mode: "share" });
+    document.body.classList.add("share-mode");
   });
   clearButton.addEventListener("click", () => {
     input.value = "";
     input.focus();
     render();
+    updateUrlState();
   });
   copyImageButton.addEventListener("click", copyImage);
   downloadSvgButton.addEventListener("click", downloadSvg);
