@@ -22,7 +22,6 @@
   const isShareMode = urlState.searchParams.get("mode") === "share";
   let currentSvg = "";
   let currentFilename = "qr-code";
-  let urlUpdateTimer = 0;
 
   if (startingText !== null) {
     input.value = startingText;
@@ -82,9 +81,41 @@
     window.history.replaceState(null, "", nextUrl);
   }
 
-  function scheduleUrlUpdate() {
-    window.clearTimeout(urlUpdateTimer);
-    urlUpdateTimer = window.setTimeout(updateUrlState, 120);
+  function shareUrl() {
+    const nextUrl = new URL(window.location.href);
+    const value = input.value;
+
+    if (value) {
+      nextUrl.searchParams.set("text", value);
+    } else {
+      nextUrl.searchParams.delete("text");
+    }
+
+    nextUrl.searchParams.set("mode", "share");
+    return nextUrl.toString();
+  }
+
+  async function copyShareLink() {
+    const url = shareUrl();
+    shareViewButton.disabled = true;
+    shareViewButton.textContent = "Copying...";
+
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        throw new Error("Clipboard text copy is not supported.");
+      }
+
+      await navigator.clipboard.writeText(url);
+      message.textContent = "Share link copied.";
+      message.classList.remove("error");
+    } catch (error) {
+      message.textContent = "Copy was blocked. The share link is now in the address bar.";
+      message.classList.add("error");
+      window.history.replaceState(null, "", url);
+    } finally {
+      shareViewButton.disabled = false;
+      shareViewButton.textContent = "Copy Share Link";
+    }
   }
 
   function buildSvg(qr, options) {
@@ -268,7 +299,7 @@
 
   input.addEventListener("input", () => {
     render();
-    scheduleUrlUpdate();
+    updateUrlState();
   });
   sizeInput.addEventListener("input", render);
   marginInput.addEventListener("input", render);
@@ -283,10 +314,7 @@
     render();
     updateUrlState();
   });
-  shareViewButton.addEventListener("click", () => {
-    updateUrlState({ mode: "share" });
-    document.body.classList.add("share-mode");
-  });
+  shareViewButton.addEventListener("click", copyShareLink);
   clearButton.addEventListener("click", () => {
     input.value = "";
     input.focus();
