@@ -23,7 +23,7 @@
           </header>
 
           <label class="field-label" for="qrInput">Text</label>
-          <textarea id="qrInput" spellcheck="false" autocomplete="off" autocapitalize="off">https://example.com</textarea>
+          <textarea id="qrInput" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
 
           <div class="controls-grid">
             <fieldset class="control-group">
@@ -75,7 +75,7 @@
             <button id="downloadSvgButton" type="button">Download SVG</button>
             <button id="downloadPngButton" type="button">Download PNG</button>
           </div>
-          <div class="share-actions" aria-label="Share view options">
+          <div class="share-actions" id="shareActions" aria-label="Share view options" hidden>
             <button class="ghost-button" id="editSharedButton" type="button">Edit</button>
             <button class="ghost-button" id="makeYourOwnButton" type="button">Make Your Own</button>
           </div>

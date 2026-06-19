@@ -15,6 +15,7 @@
   const copyImageButton = document.getElementById("copyImageButton");
   const downloadSvgButton = document.getElementById("downloadSvgButton");
   const downloadPngButton = document.getElementById("downloadPngButton");
+  const shareActions = document.getElementById("shareActions");
   const editSharedButton = document.getElementById("editSharedButton");
   const makeYourOwnButton = document.getElementById("makeYourOwnButton");
 
@@ -29,7 +30,12 @@
     input.value = startingText;
   }
 
-  document.body.classList.toggle("share-mode", isShareMode);
+  function setShareMode(active) {
+    document.body.classList.toggle("share-mode", active);
+    shareActions.hidden = !active;
+  }
+
+  setShareMode(isShareMode);
 
   function selectedEcc() {
     return document.querySelector("input[name='ecc']:checked").value;
@@ -84,14 +90,17 @@
   }
 
   function openFullView(options = {}) {
+    const nextUrl = new URL(window.location.href);
+
+    nextUrl.searchParams.delete("mode");
+
     if (options.reset) {
-      input.value = "";
-      render();
+      nextUrl.searchParams.delete("text");
+    } else if (input.value) {
+      nextUrl.searchParams.set("text", input.value);
     }
 
-    document.body.classList.remove("share-mode");
-    updateUrlState({ mode: "full" });
-    input.focus();
+    window.location.href = nextUrl.toString();
   }
 
   function shareUrl() {

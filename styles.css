@@ -304,10 +304,15 @@ input[type="color"] {
 
 .share-actions {
   display: none;
+  padding-top: 4px;
 }
 
 .share-actions button {
   flex: 1 1 0;
+  min-height: 40px;
+  color: #334155;
+  background: #ffffff;
+  border-color: #b8c4d2;
 }
 
 body.share-mode .app-shell {
@@ -336,7 +341,11 @@ body.share-mode .qr-stage {
   min-height: auto;
 }
 
-body.share-mode .share-actions {
+.share-actions[hidden] {
+  display: none;
+}
+
+body.share-mode .share-actions:not([hidden]) {
   display: flex;
 }
 
