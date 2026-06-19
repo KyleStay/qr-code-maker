@@ -15,6 +15,8 @@
   const copyImageButton = document.getElementById("copyImageButton");
   const downloadSvgButton = document.getElementById("downloadSvgButton");
   const downloadPngButton = document.getElementById("downloadPngButton");
+  const editSharedButton = document.getElementById("editSharedButton");
+  const makeYourOwnButton = document.getElementById("makeYourOwnButton");
 
   const sampleText = "https://github.com/new";
   const urlState = new URL(window.location.href);
@@ -79,6 +81,17 @@
     }
 
     window.history.replaceState(null, "", nextUrl);
+  }
+
+  function openFullView(options = {}) {
+    if (options.reset) {
+      input.value = "";
+      render();
+    }
+
+    document.body.classList.remove("share-mode");
+    updateUrlState({ mode: "full" });
+    input.focus();
   }
 
   function shareUrl() {
@@ -324,6 +337,8 @@
   copyImageButton.addEventListener("click", copyImage);
   downloadSvgButton.addEventListener("click", downloadSvg);
   downloadPngButton.addEventListener("click", downloadPng);
+  editSharedButton.addEventListener("click", () => openFullView());
+  makeYourOwnButton.addEventListener("click", () => openFullView({ reset: true }));
 
   render();
 })();

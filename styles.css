@@ -109,7 +109,8 @@ button:disabled {
 .topbar,
 .topbar-actions,
 .preview-toolbar,
-.actions {
+.actions,
+.share-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -301,6 +302,14 @@ input[type="color"] {
   flex: 1 1 0;
 }
 
+.share-actions {
+  display: none;
+}
+
+.share-actions button {
+  flex: 1 1 0;
+}
+
 body.share-mode .app-shell {
   width: min(680px, calc(100vw - 32px));
 }
@@ -325,6 +334,10 @@ body.share-mode #qrCode {
 
 body.share-mode .qr-stage {
   min-height: auto;
+}
+
+body.share-mode .share-actions {
+  display: flex;
 }
 
 @media (max-width: 860px) {
@@ -361,7 +374,8 @@ body.share-mode .qr-stage {
   .topbar,
   .topbar-actions,
   .preview-toolbar,
-  .actions {
+  .actions,
+  .share-actions {
     align-items: stretch;
     flex-direction: column;
   }
@@ -369,7 +383,8 @@ body.share-mode .qr-stage {
   .topbar button,
   .topbar-actions button,
   .preview-toolbar button,
-  .actions button {
+  .actions button,
+  .share-actions button {
     width: 100%;
   }
 
