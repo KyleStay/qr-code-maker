@@ -38,6 +38,21 @@
 
   const exampleText = "https://example.com";
   const settingParamNames = ["ecc", "size", "margin", "fg", "bg", "transparent"];
+  const contentTypeParamName = "type";
+  const contentTypeValues = Array.from(contentType.options).map((option) => option.value);
+  const contentParamNames = [
+    "url",
+    "email",
+    "subject",
+    "body",
+    "phone",
+    "smsPhone",
+    "smsMessage",
+    "wifiSsid",
+    "wifiPassword",
+    "wifiSecurity",
+    "wifiHidden"
+  ];
   const minSize = Number(sizeInput.min);
   const maxSize = Number(sizeInput.max);
   const urlState = new URL(window.location.href);
@@ -60,9 +75,13 @@
   let currentFilename = "qr-code";
 
   restoreSettings(urlState);
+  restoreContentType(urlState);
 
-  if (startingText !== null) {
+  if (restoreContentParams(urlState)) {
+    input.value = buildTemplateText();
+  } else if (startingText !== null) {
     input.value = startingText;
+    restoreTemplateFields(contentType.value, startingText);
   }
 
   function setShareMode(active) {
@@ -138,6 +157,176 @@
     transparentBackgroundInput.checked = transparent === "1" || transparent === "true";
   }
 
+  function restoreContentType(url) {
+    const type = url.searchParams.get(contentTypeParamName);
+
+    if (contentTypeValues.includes(type)) {
+      contentType.value = type;
+    }
+  }
+
+  function restoreTemplateFields(type, value) {
+    switch (type) {
+      case "url":
+        urlValue.value = value;
+        break;
+      case "email":
+        restoreEmailFields(value);
+        break;
+      case "phone":
+        phoneNumber.value = value.replace(/^tel:/i, "");
+        break;
+      case "sms":
+        restoreSmsFields(value);
+        break;
+      case "wifi":
+        restoreWifiFields(value);
+        break;
+    }
+  }
+
+  function restoreContentParams(url) {
+    if (!hasContentParams(url, contentType.value)) {
+      return false;
+    }
+
+    switch (contentType.value) {
+      case "url":
+        urlValue.value = url.searchParams.get("url") || "";
+        return true;
+      case "email":
+        emailAddress.value = url.searchParams.get("email") || "";
+        emailSubject.value = url.searchParams.get("subject") || "";
+        emailBody.value = url.searchParams.get("body") || "";
+        return true;
+      case "phone":
+        phoneNumber.value = url.searchParams.get("phone") || "";
+        return true;
+      case "sms":
+        smsNumber.value = url.searchParams.get("smsPhone") || "";
+        smsMessage.value = url.searchParams.get("smsMessage") || "";
+        return true;
+      case "wifi":
+        wifiSsid.value = url.searchParams.get("wifiSsid") || "";
+        wifiPassword.value = url.searchParams.get("wifiPassword") || "";
+        wifiSecurity.value = validWifiSecurity(url.searchParams.get("wifiSecurity"));
+        wifiHidden.checked = ["1", "true"].includes(url.searchParams.get("wifiHidden"));
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  function hasContentParams(url, type) {
+    return contentParamNamesForType(type).some((name) => url.searchParams.has(name));
+  }
+
+  function contentParamNamesForType(type) {
+    switch (type) {
+      case "url":
+        return ["url"];
+      case "email":
+        return ["email", "subject", "body"];
+      case "phone":
+        return ["phone"];
+      case "sms":
+        return ["smsPhone", "smsMessage"];
+      case "wifi":
+        return ["wifiSsid", "wifiPassword", "wifiSecurity", "wifiHidden"];
+      default:
+        return [];
+    }
+  }
+
+  function validWifiSecurity(value) {
+    return ["WPA", "WEP", "nopass"].includes(value) ? value : "WPA";
+  }
+
+  function restoreEmailFields(value) {
+    if (!value.toLowerCase().startsWith("mailto:")) {
+      emailAddress.value = value;
+      return;
+    }
+
+    const withoutScheme = value.slice(7);
+    const [address, query = ""] = withoutScheme.split("?");
+    const params = new URLSearchParams(query);
+    emailAddress.value = decodeURIComponent(address);
+    emailSubject.value = params.get("subject") || "";
+    emailBody.value = params.get("body") || "";
+  }
+
+  function restoreSmsFields(value) {
+    if (!value.toLowerCase().startsWith("sms:")) {
+      smsNumber.value = value;
+      return;
+    }
+
+    const withoutScheme = value.slice(4);
+    const [number, query = ""] = withoutScheme.split("?");
+    const params = new URLSearchParams(query);
+    smsNumber.value = number;
+    smsMessage.value = params.get("body") || "";
+  }
+
+  function restoreWifiFields(value) {
+    if (!value.toUpperCase().startsWith("WIFI:")) {
+      wifiSsid.value = value;
+      return;
+    }
+
+    const fields = parseWifiFields(value.slice(5));
+    wifiSecurity.value = fields.T || "WPA";
+    wifiSsid.value = fields.S || "";
+    wifiPassword.value = fields.P || "";
+    wifiHidden.checked = fields.H === "true";
+  }
+
+  function parseWifiFields(value) {
+    const fields = {};
+    let key = "";
+    let fieldValue = "";
+    let readingKey = true;
+    let escaping = false;
+
+    for (const char of value) {
+      if (escaping) {
+        fieldValue += char;
+        escaping = false;
+        continue;
+      }
+
+      if (!readingKey && char === "\\") {
+        escaping = true;
+        continue;
+      }
+
+      if (readingKey && char === ":") {
+        readingKey = false;
+        continue;
+      }
+
+      if (!readingKey && char === ";") {
+        if (key) {
+          fields[key] = fieldValue;
+        }
+
+        key = "";
+        fieldValue = "";
+        readingKey = true;
+        continue;
+      }
+
+      if (readingKey) {
+        key += char;
+      } else {
+        fieldValue += char;
+      }
+    }
+
+    return fields;
+  }
+
   function safeFilename(value) {
     const cleaned = value
       .trim()
@@ -195,6 +384,56 @@
     }
   }
 
+  function setContentTypeParam(url) {
+    if (contentType.value === "text") {
+      url.searchParams.delete(contentTypeParamName);
+      return;
+    }
+
+    url.searchParams.set(contentTypeParamName, contentType.value);
+  }
+
+  function setOptionalParam(url, name, value) {
+    const normalized = typeof value === "string" ? value.trim() : value;
+
+    if (normalized) {
+      url.searchParams.set(name, normalized);
+    }
+  }
+
+  function setContentParams(url) {
+    contentParamNames.forEach((name) => {
+      url.searchParams.delete(name);
+    });
+
+    switch (contentType.value) {
+      case "url":
+        setOptionalParam(url, "url", urlValue.value);
+        break;
+      case "email":
+        setOptionalParam(url, "email", emailAddress.value);
+        setOptionalParam(url, "subject", emailSubject.value);
+        setOptionalParam(url, "body", emailBody.value);
+        break;
+      case "phone":
+        setOptionalParam(url, "phone", phoneNumber.value);
+        break;
+      case "sms":
+        setOptionalParam(url, "smsPhone", smsNumber.value);
+        setOptionalParam(url, "smsMessage", smsMessage.value);
+        break;
+      case "wifi":
+        setOptionalParam(url, "wifiSsid", wifiSsid.value);
+        setOptionalParam(url, "wifiPassword", wifiPassword.value);
+        url.searchParams.set("wifiSecurity", wifiSecurity.value);
+
+        if (wifiHidden.checked) {
+          url.searchParams.set("wifiHidden", "1");
+        }
+        break;
+    }
+  }
+
   function hasSettingParams(url) {
     return settingParamNames.some((name) => url.searchParams.has(name));
   }
@@ -215,6 +454,8 @@
       setSettingsParams(nextUrl);
     }
 
+    setContentTypeParam(nextUrl);
+    setContentParams(nextUrl);
     setTextLast(nextUrl, value);
     window.history.replaceState(null, "", nextUrl);
     updateShareUrl();
@@ -227,6 +468,8 @@
 
     if (!options.reset && input.value) {
       setSettingsParams(nextUrl);
+      setContentTypeParam(nextUrl);
+      setContentParams(nextUrl);
       setTextLast(nextUrl, input.value);
     }
 
@@ -240,6 +483,8 @@
     nextUrl.search = "";
     nextUrl.searchParams.set("mode", "share");
     setSettingsParams(nextUrl);
+    setContentTypeParam(nextUrl);
+    setContentParams(nextUrl);
     setTextLast(nextUrl, value);
     return nextUrl.toString();
   }
@@ -702,7 +947,7 @@
       control.checked = Number(control.value) === Number(sizeInput.value);
     });
 
-    if (sizeInput.validity.valid) {
+    if (sizeInput.value !== "" && sizeInput.validity.valid) {
       renderAndSyncUrl({ includeSettings: true });
     }
   });

@@ -565,12 +565,12 @@ body.share-mode .share-actions:not([hidden]) {
     padding: 20px;
   }
 
-  .controls-grid {
-    grid-template-columns: 1fr;
+  .preview-pane {
+    order: 0;
   }
 
-  .preview-pane {
-    order: -1;
+  .controls-grid {
+    grid-template-columns: 1fr;
   }
 
   textarea {

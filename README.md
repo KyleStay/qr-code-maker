@@ -9,7 +9,7 @@ A static, client-side QR code maker that can be hosted from GitHub Pages or any 
 - Content helpers for URLs, email, phone, SMS, and Wi-Fi QR payloads
 - Scan guidance for contrast, quiet-zone margin, payload size, and error correction
 - Adjustable error correction, size presets, custom export size, margin, colors, and transparent background
-- Share URLs that preserve QR text, size, margin, colors, transparency, and error correction
+- Share URLs that preserve QR text, content type, size, margin, colors, transparency, and error correction
 - Copy generated QR codes to the clipboard as PNG images
 - SVG and PNG downloads
 
@@ -27,7 +27,7 @@ https://kylestay.github.io/qr-code-maker/?text=Hello%20world
 
 When other query parameters are present, `text` is always written last so it remains easy to edit by hand.
 
-QR settings can also be shared with `ecc`, `size`, `margin`, `fg`, `bg`, and `transparent=1` query parameters. The visible Share URL field and Copy Share Link button include these settings automatically.
+QR settings can also be shared with `type`, `ecc`, `size`, `margin`, `fg`, `bg`, and `transparent=1` query parameters. Helper options for the active `type` are included too: `url`, `email`, `subject`, `body`, `phone`, `smsPhone`, `smsMessage`, `wifiSsid`, `wifiPassword`, `wifiSecurity`, and `wifiHidden=1`. The visible Share URL field and Copy Share Link button include these settings automatically.
 
 Export sizes include common presets for web, documents, print, and signage: `256`, `512`, `1024`, `2048`, and `4096` pixels. You can also enter a custom square export size from `160` to `4096` pixels.
 
