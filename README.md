@@ -10,6 +10,7 @@ A static, client-side QR code maker that can be hosted from GitHub Pages or any 
 - Scan guidance for contrast, quiet-zone margin, payload size, and error correction
 - Adjustable error correction, size presets, custom export size, margin, colors, and transparent background
 - Share URLs that preserve QR text, content type, size, margin, colors, transparency, and error correction
+- Wi-Fi share links omit passwords unless you explicitly opt in
 - Copy generated QR codes to the clipboard as PNG images
 - SVG and PNG downloads
 
@@ -27,7 +28,11 @@ https://kylestay.github.io/qr-code-maker/?text=Hello%20world
 
 When other query parameters are present, `text` is always written last so it remains easy to edit by hand.
 
-QR settings can also be shared with `type`, `ecc`, `size`, `margin`, `fg`, `bg`, and `transparent=1` query parameters. Helper options for the active `type` are included too: `url`, `email`, `subject`, `body`, `phone`, `smsPhone`, `smsMessage`, `wifiSsid`, `wifiPassword`, `wifiSecurity`, and `wifiHidden=1`. The visible Share URL field and Copy Share Link button include these settings automatically.
+QR settings can also be shared with `type`, `ecc`, `size`, `margin`, `fg`, `bg`, and `transparent=1` query parameters. Helper options for the active `type` are included too: `url`, `email`, `subject`, `body`, `phone`, `smsPhone`, `smsMessage`, `wifiSsid`, `wifiSecurity`, `wifiHidden=1`, and, only when opted in, `wifiPassword`. The visible Share URL field and Copy Share Link button include these settings automatically.
+
+Wi-Fi passwords are treated as sensitive. The generated QR code can include the password, but share links omit `wifiPassword` and the password-bearing QR text unless you check **Include password in share links**. Existing links that already contain `wifiPassword` still restore that password.
+
+Very large QR payloads can make URLs too long for reliable copying or sharing. When a share URL is over the app's safety limit, the Share URL field explains the problem and Copy Share Link is disabled until the content is shortened.
 
 Export sizes include common presets for web, documents, print, and signage: `256`, `512`, `1024`, `2048`, and `4096` pixels. You can also enter a custom square export size from `160` to `4096` pixels.
 

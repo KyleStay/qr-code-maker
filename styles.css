@@ -153,6 +153,13 @@ legend,
   margin-top: 28px;
 }
 
+.field-help {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 textarea {
   width: 100%;
   min-height: 220px;
@@ -294,6 +301,7 @@ button:focus-visible {
   display: grid;
   place-items: center;
   border-right: 1px solid var(--line);
+  overflow-wrap: anywhere;
   text-align: center;
   cursor: pointer;
 }
@@ -511,7 +519,7 @@ input[type="color"] {
 }
 
 body.share-mode .app-shell {
-  width: min(680px, calc(100vw - 32px));
+  width: min(760px, calc(100vw - 32px));
 }
 
 body.share-mode .workspace {
@@ -524,16 +532,25 @@ body.share-mode .preview-toolbar {
 }
 
 body.share-mode .preview-pane {
-  grid-template-rows: auto auto auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: auto;
+  min-height: calc(100vh - 64px);
 }
 
 body.share-mode #qrCode {
-  width: min(100%, 620px);
+  width: min(100%, 680px);
+  min-height: 0;
+  padding: 12px;
 }
 
 body.share-mode .qr-stage {
-  min-height: auto;
+  min-height: min(72vh, 680px);
+}
+
+body.share-mode .scan-status,
+body.share-mode .message,
+body.share-mode .share-link-panel {
+  display: none;
 }
 
 .share-actions[hidden] {
@@ -542,6 +559,16 @@ body.share-mode .qr-stage {
 
 body.share-mode .share-actions:not([hidden]) {
   display: flex;
+}
+
+@media (min-width: 861px) and (max-width: 1120px) {
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .segmented label {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 860px) {
@@ -555,6 +582,10 @@ body.share-mode .share-actions:not([hidden]) {
     grid-template-columns: 1fr;
   }
 
+  .preview-pane {
+    order: -1;
+  }
+
   .editor-pane {
     border-right: 0;
     border-bottom: 1px solid var(--line);
@@ -565,16 +596,16 @@ body.share-mode .share-actions:not([hidden]) {
     padding: 20px;
   }
 
-  .preview-pane {
-    order: 0;
-  }
-
   .controls-grid {
     grid-template-columns: 1fr;
   }
 
   textarea {
     min-height: 170px;
+  }
+
+  #qrCode svg {
+    max-height: 48vh;
   }
 }
 
@@ -601,7 +632,19 @@ body.share-mode .share-actions:not([hidden]) {
   }
 
   .size-presets {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .segmented {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .segmented label:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .segmented label:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
   }
 
   .number-control {
@@ -610,5 +653,20 @@ body.share-mode .share-actions:not([hidden]) {
 
   .template-fields {
     grid-template-columns: 1fr;
+  }
+
+  body.share-mode .app-shell {
+    width: calc(100vw - 16px);
+    padding: 8px 0;
+  }
+
+  body.share-mode .preview-pane {
+    min-height: calc(100vh - 16px);
+    padding: 12px;
+    gap: 12px;
+  }
+
+  body.share-mode .qr-stage {
+    min-height: min(76vh, calc(100vw - 40px));
   }
 }

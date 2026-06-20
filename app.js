@@ -16,6 +16,7 @@
   const smsMessage = document.getElementById("smsMessage");
   const wifiSsid = document.getElementById("wifiSsid");
   const wifiPassword = document.getElementById("wifiPassword");
+  const wifiSharePassword = document.getElementById("wifiSharePassword");
   const wifiSecurity = document.getElementById("wifiSecurity");
   const wifiHidden = document.getElementById("wifiHidden");
   const sizeInput = document.getElementById("sizeInput");
@@ -35,8 +36,11 @@
   const editSharedButton = document.getElementById("editSharedButton");
   const makeYourOwnButton = document.getElementById("makeYourOwnButton");
   const shareUrlInput = document.getElementById("shareUrlInput");
+  const qrInputHelp = document.getElementById("qrInputHelp");
+  const shareUrlHelp = document.getElementById("shareUrlHelp");
 
   const exampleText = "https://example.com";
+  const maxShareUrlLength = 6000;
   const settingParamNames = ["ecc", "size", "margin", "fg", "bg", "transparent"];
   const contentTypeParamName = "type";
   const contentTypeValues = Array.from(contentType.options).map((option) => option.value);
@@ -50,6 +54,7 @@
     "smsMessage",
     "wifiSsid",
     "wifiPassword",
+    "wifiSharePassword",
     "wifiSecurity",
     "wifiHidden"
   ];
@@ -68,14 +73,20 @@
     smsMessage,
     wifiSsid,
     wifiPassword,
+    wifiSharePassword,
     wifiSecurity,
     wifiHidden
   ];
   let currentSvg = "";
   let currentFilename = "qr-code";
+  let pendingFrame = null;
+  let pendingSyncOptions = null;
+  let exportInProgress = false;
+  let lastContentType = contentType.value;
 
   restoreSettings(urlState);
   restoreContentType(urlState);
+  lastContentType = contentType.value;
 
   if (restoreContentParams(urlState)) {
     input.value = buildTemplateText();
@@ -209,6 +220,7 @@
       case "wifi":
         wifiSsid.value = url.searchParams.get("wifiSsid") || "";
         wifiPassword.value = url.searchParams.get("wifiPassword") || "";
+        wifiSharePassword.checked = url.searchParams.has("wifiPassword") || ["1", "true"].includes(url.searchParams.get("wifiSharePassword"));
         wifiSecurity.value = validWifiSecurity(url.searchParams.get("wifiSecurity"));
         wifiHidden.checked = ["1", "true"].includes(url.searchParams.get("wifiHidden"));
         return true;
@@ -232,7 +244,7 @@
       case "sms":
         return ["smsPhone", "smsMessage"];
       case "wifi":
-        return ["wifiSsid", "wifiPassword", "wifiSecurity", "wifiHidden"];
+        return ["wifiSsid", "wifiPassword", "wifiSharePassword", "wifiSecurity", "wifiHidden"];
       default:
         return [];
     }
@@ -279,6 +291,7 @@
     wifiSecurity.value = fields.T || "WPA";
     wifiSsid.value = fields.S || "";
     wifiPassword.value = fields.P || "";
+    wifiSharePassword.checked = Boolean(fields.P);
     wifiHidden.checked = fields.H === "true";
   }
 
@@ -401,7 +414,8 @@
     }
   }
 
-  function setContentParams(url) {
+  function setContentParams(url, options = {}) {
+    const includeSensitive = options.includeSensitive !== false;
     contentParamNames.forEach((name) => {
       url.searchParams.delete(name);
     });
@@ -424,7 +438,14 @@
         break;
       case "wifi":
         setOptionalParam(url, "wifiSsid", wifiSsid.value);
-        setOptionalParam(url, "wifiPassword", wifiPassword.value);
+        if (wifiSharePassword.checked) {
+          url.searchParams.set("wifiSharePassword", "1");
+        }
+
+        if (includeSensitive && wifiSharePassword.checked) {
+          setOptionalParam(url, "wifiPassword", wifiPassword.value);
+        }
+
         url.searchParams.set("wifiSecurity", wifiSecurity.value);
 
         if (wifiHidden.checked) {
@@ -438,9 +459,18 @@
     return settingParamNames.some((name) => url.searchParams.has(name));
   }
 
+  function shouldIncludeSensitiveShareData(options = {}) {
+    if (options.includeSensitive === true) {
+      return true;
+    }
+
+    return !(contentType.value === "wifi" && wifiPassword.value && !wifiSharePassword.checked);
+  }
+
   function updateUrlState(options = {}) {
     const nextUrl = new URL(window.location.href);
-    const value = input.value;
+    const includeSensitive = shouldIncludeSensitiveShareData(options);
+    const value = shareTextValue(includeSensitive);
     const mode = options.mode || nextUrl.searchParams.get("mode");
     const includeSettings = options.includeSettings || hasSettingParams(nextUrl);
 
@@ -455,7 +485,7 @@
     }
 
     setContentTypeParam(nextUrl);
-    setContentParams(nextUrl);
+    setContentParams(nextUrl, { includeSensitive });
     setTextLast(nextUrl, value);
     window.history.replaceState(null, "", nextUrl);
     updateShareUrl();
@@ -469,32 +499,74 @@
     if (!options.reset && input.value) {
       setSettingsParams(nextUrl);
       setContentTypeParam(nextUrl);
-      setContentParams(nextUrl);
-      setTextLast(nextUrl, input.value);
+      setContentParams(nextUrl, { includeSensitive: shouldIncludeSensitiveShareData(options) });
+      setTextLast(nextUrl, shareTextValue(shouldIncludeSensitiveShareData(options)));
     }
 
     window.location.href = nextUrl.toString();
   }
 
-  function shareUrl() {
+  function shareTextValue(includeSensitive) {
+    if (contentType.value === "wifi" && !includeSensitive) {
+      return buildTemplateText({ includeWifiPassword: false });
+    }
+
+    return input.value;
+  }
+
+  function shareUrl(options = {}) {
     const nextUrl = new URL(window.location.href);
-    const value = input.value;
+    const includeSensitive = shouldIncludeSensitiveShareData(options);
+    const value = shareTextValue(includeSensitive);
 
     nextUrl.search = "";
     nextUrl.searchParams.set("mode", "share");
     setSettingsParams(nextUrl);
     setContentTypeParam(nextUrl);
-    setContentParams(nextUrl);
+    setContentParams(nextUrl, { includeSensitive });
     setTextLast(nextUrl, value);
     return nextUrl.toString();
   }
 
   function updateShareUrl() {
-    shareUrlInput.value = shareUrl();
+    const url = shareUrl();
+    const omitsWifiPassword = contentType.value === "wifi" && Boolean(wifiPassword.value) && !wifiSharePassword.checked;
+    const tooLong = url.length > maxShareUrlLength;
+
+    shareUrlInput.value = tooLong ? "" : url;
+    shareViewButton.disabled = tooLong;
+    shareViewButton.title = tooLong ? "Share URL is too long to copy safely" : "";
+    shareUrlHelp.textContent = shareUrlHelpText({ tooLong, omitsWifiPassword, length: url.length });
+  }
+
+  function shareUrlHelpText({ tooLong, omitsWifiPassword, length }) {
+    if (tooLong) {
+      return `Share URL is ${length.toLocaleString()} characters, which is too long. Shorten the content before sharing a link.`;
+    }
+
+    if (omitsWifiPassword) {
+      return "Share links omit the Wi-Fi password until you explicitly include it.";
+    }
+
+    if (contentType.value === "wifi" && wifiPassword.value) {
+      return "This share link includes the Wi-Fi password because you opted in.";
+    }
+
+    return "Share links preserve the current QR content and settings.";
   }
 
   async function copyShareLink() {
-    const url = shareUrl();
+    const includeSensitive = shouldIncludeSensitiveShareData();
+
+    const url = shareUrl({ includeSensitive });
+
+    if (url.length > maxShareUrlLength) {
+      message.textContent = "Share URL is too long. Shorten the QR content before copying a share link.";
+      message.classList.add("error");
+      updateShareUrl();
+      return;
+    }
+
     shareViewButton.disabled = true;
     shareViewButton.setAttribute("aria-busy", "true");
     shareViewButton.textContent = "Copying...";
@@ -505,23 +577,30 @@
       }
 
       await navigator.clipboard.writeText(url);
-      message.textContent = "Share link copied.";
+      message.textContent = includeSensitive && contentType.value === "wifi" && wifiPassword.value
+        ? "Share link copied with Wi-Fi password included."
+        : contentType.value === "wifi" && wifiPassword.value
+          ? "Share link copied without the Wi-Fi password."
+        : "Share link copied.";
       message.classList.remove("error");
     } catch (error) {
       message.textContent = "Copy was blocked. Use the share URL field below.";
       message.classList.add("error");
       window.history.replaceState(null, "", url);
     } finally {
-      shareViewButton.disabled = false;
+      updateShareUrl();
       shareViewButton.removeAttribute("aria-busy");
       shareViewButton.textContent = "Copy Share Link";
     }
   }
 
-  function setGeneratedText(value) {
+  function setGeneratedText(value, options = {}) {
     input.value = value;
-    render();
-    updateUrlState();
+    if (options.immediate) {
+      renderAndSyncUrl();
+    } else {
+      scheduleRenderAndSyncUrl();
+    }
   }
 
   function normalizeUrl(value) {
@@ -545,7 +624,7 @@
     return value.replace(/([\\;,:"])/g, "\\$1");
   }
 
-  function buildTemplateText() {
+  function buildTemplateText(options = {}) {
     switch (contentType.value) {
       case "url":
         return normalizeUrl(urlValue.value);
@@ -572,7 +651,8 @@
         }
 
         const security = wifiSecurity.value;
-        const password = security === "nopass" ? "" : wifiPassword.value;
+        const includeWifiPassword = options.includeWifiPassword !== false;
+        const password = security === "nopass" || !includeWifiPassword ? "" : wifiPassword.value;
         const hidden = wifiHidden.checked ? "H:true;" : "";
         return `WIFI:T:${security};S:${escapeWifiValue(ssid)};P:${escapeWifiValue(password)};${hidden};`;
       }
@@ -604,11 +684,14 @@
     }
   }
 
-  function updateTemplateVisibility(sync = true) {
+  function updateTemplateVisibility(sync = true, previousType = null) {
     const isText = contentType.value === "text";
     templatePanel.hidden = isText;
     input.readOnly = !isText;
     input.classList.toggle("generated-content", !isText);
+    qrInputHelp.textContent = isText
+      ? "Plain text is encoded exactly as entered."
+      : "Generated from the helper fields above. Edit those fields to change the QR content.";
 
     templateFields.forEach((group) => {
       group.hidden = group.dataset.template !== contentType.value;
@@ -618,11 +701,21 @@
       return;
     }
 
-    if (isText || !templateHasInput(contentType.value)) {
-      render();
-      updateUrlState();
+    if (isText) {
+      scheduleRenderAndSyncUrl();
+      return;
+    }
+
+    if (!templateHasInput(contentType.value) && previousType === "text" && input.value.trim()) {
+      restoreTemplateFields(contentType.value, input.value);
+    }
+
+    const nextText = buildTemplateText();
+
+    if (input.value !== nextText) {
+      setGeneratedText(nextText);
     } else {
-      syncTemplateText();
+      scheduleRenderAndSyncUrl();
     }
   }
 
@@ -717,10 +810,29 @@
     const title = enabled ? "" : "Generate a QR code first";
 
     [copyImageButton, downloadSvgButton, downloadPngButton].forEach((button) => {
-      button.disabled = !enabled;
+      button.disabled = !enabled || exportInProgress;
       button.title = title;
       button.setAttribute("aria-disabled", String(!enabled));
     });
+  }
+
+  function setExportBusy(active, label) {
+    exportInProgress = active;
+
+    copyImageButton.disabled = active || !currentSvg;
+    downloadPngButton.disabled = active || !currentSvg;
+    downloadSvgButton.disabled = active || !currentSvg;
+
+    copyImageButton.textContent = active && label === "copy" ? "Copying..." : "Copy Image";
+    downloadPngButton.textContent = active && label === "png" ? "Exporting..." : "Download PNG";
+
+    if (active) {
+      copyImageButton.setAttribute("aria-busy", String(label === "copy"));
+      downloadPngButton.setAttribute("aria-busy", String(label === "png"));
+    } else {
+      copyImageButton.removeAttribute("aria-busy");
+      downloadPngButton.removeAttribute("aria-busy");
+    }
   }
 
   function scannabilityItems(value, qr) {
@@ -763,6 +875,25 @@
       items.push({
         type: "ok",
         text: "Quiet-zone margin is scan friendly."
+      });
+    }
+
+    if (bytes > 1200) {
+      items.push({
+        type: "warn",
+        text: "Large payload: use a larger export size, keep high contrast, and test scanning before printing."
+      });
+    } else {
+      items.push({
+        type: "ok",
+        text: "Payload density is comfortable for most cameras."
+      });
+    }
+
+    if (selectedEcc() === "L") {
+      items.push({
+        type: "warn",
+        text: "Low correction fits more data but is less tolerant of damage. Use Medium or High for print."
       });
     }
 
@@ -841,6 +972,8 @@
   function downloadSvg() {
     if (!currentSvg) return;
     downloadBlob(new Blob([currentSvg], { type: "image/svg+xml" }), `${currentFilename}.svg`);
+    message.textContent = "SVG downloaded.";
+    message.classList.remove("error");
   }
 
   function svgToPngBlob() {
@@ -878,19 +1011,25 @@
   }
 
   async function downloadPng() {
-    if (!currentSvg) return;
+    if (!currentSvg || exportInProgress) return;
+
+    setExportBusy(true, "png");
 
     try {
       const blob = await svgToPngBlob();
       downloadBlob(blob, `${currentFilename}.png`);
+      message.textContent = "PNG downloaded.";
+      message.classList.remove("error");
     } catch (error) {
       message.textContent = error.message;
       message.classList.add("error");
+    } finally {
+      setExportBusy(false);
     }
   }
 
   async function copyImage() {
-    if (!currentSvg) return;
+    if (!currentSvg || exportInProgress) return;
 
     if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
       message.textContent = "Image clipboard copy is not supported in this browser. Download PNG instead.";
@@ -898,9 +1037,7 @@
       return;
     }
 
-    copyImageButton.disabled = true;
-    copyImageButton.setAttribute("aria-busy", "true");
-    copyImageButton.textContent = "Copying...";
+    setExportBusy(true, "copy");
 
     try {
       const blob = await svgToPngBlob();
@@ -915,9 +1052,7 @@
       message.textContent = "Clipboard copy was blocked by the browser.";
       message.classList.add("error");
     } finally {
-      copyImageButton.disabled = false;
-      copyImageButton.removeAttribute("aria-busy");
-      copyImageButton.textContent = "Copy Image";
+      setExportBusy(false);
     }
   }
 
@@ -926,12 +1061,31 @@
     updateUrlState(options);
   }
 
+  function scheduleRenderAndSyncUrl(options = {}) {
+    pendingSyncOptions = Object.assign({}, pendingSyncOptions || {}, options);
+
+    if (pendingFrame !== null) {
+      return;
+    }
+
+    pendingFrame = window.requestAnimationFrame(() => {
+      const syncOptions = pendingSyncOptions || {};
+      pendingFrame = null;
+      pendingSyncOptions = null;
+      renderAndSyncUrl(syncOptions);
+    });
+  }
+
   input.addEventListener("input", () => {
     if (contentType.value === "text") {
-      renderAndSyncUrl();
+      scheduleRenderAndSyncUrl();
     }
   });
-  contentType.addEventListener("change", updateTemplateVisibility);
+  contentType.addEventListener("change", () => {
+    const previousType = lastContentType;
+    updateTemplateVisibility(true, previousType);
+    lastContentType = contentType.value;
+  });
   templateInputs.forEach((control) => {
     control.addEventListener("input", syncTemplateText);
     control.addEventListener("change", syncTemplateText);
@@ -939,7 +1093,7 @@
   sizePresetInputs.forEach((control) => {
     control.addEventListener("change", () => {
       setSize(control.value);
-      renderAndSyncUrl({ includeSettings: true });
+      scheduleRenderAndSyncUrl({ includeSettings: true });
     });
   });
   sizeInput.addEventListener("input", () => {
@@ -948,19 +1102,19 @@
     });
 
     if (sizeInput.value !== "" && sizeInput.validity.valid) {
-      renderAndSyncUrl({ includeSettings: true });
+      scheduleRenderAndSyncUrl({ includeSettings: true });
     }
   });
   sizeInput.addEventListener("change", () => {
     setSize(sizeInput.value);
-    renderAndSyncUrl({ includeSettings: true });
+    scheduleRenderAndSyncUrl({ includeSettings: true });
   });
-  marginInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
-  foregroundInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
-  backgroundInput.addEventListener("input", () => renderAndSyncUrl({ includeSettings: true }));
-  transparentBackgroundInput.addEventListener("change", () => renderAndSyncUrl({ includeSettings: true }));
+  marginInput.addEventListener("input", () => scheduleRenderAndSyncUrl({ includeSettings: true }));
+  foregroundInput.addEventListener("input", () => scheduleRenderAndSyncUrl({ includeSettings: true }));
+  backgroundInput.addEventListener("input", () => scheduleRenderAndSyncUrl({ includeSettings: true }));
+  transparentBackgroundInput.addEventListener("change", () => scheduleRenderAndSyncUrl({ includeSettings: true }));
   document.querySelectorAll("input[name='ecc']").forEach((radio) => {
-    radio.addEventListener("change", () => renderAndSyncUrl({ includeSettings: true }));
+    radio.addEventListener("change", () => scheduleRenderAndSyncUrl({ includeSettings: true }));
   });
   exampleButton.addEventListener("click", () => {
     contentType.value = "text";
