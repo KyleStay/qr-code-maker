@@ -1,3 +1,5 @@
+qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+
 (function () {
   const input = document.getElementById("qrInput");
   const qrCode = document.getElementById("qrCode");
@@ -263,7 +265,11 @@
     const withoutScheme = value.slice(7);
     const [address, query = ""] = withoutScheme.split("?");
     const params = new URLSearchParams(query);
-    emailAddress.value = decodeURIComponent(address);
+    try {
+      emailAddress.value = decodeURIComponent(address);
+    } catch {
+      emailAddress.value = address;
+    }
     emailSubject.value = params.get("subject") || "";
     emailBody.value = params.get("body") || "";
   }
@@ -437,13 +443,15 @@
         setOptionalParam(url, "smsMessage", smsMessage.value);
         break;
       case "wifi":
-        setOptionalParam(url, "wifiSsid", wifiSsid.value);
+        if (wifiSsid.value) {
+          url.searchParams.set("wifiSsid", wifiSsid.value);
+        }
         if (wifiSharePassword.checked) {
           url.searchParams.set("wifiSharePassword", "1");
         }
 
-        if (includeSensitive && wifiSharePassword.checked) {
-          setOptionalParam(url, "wifiPassword", wifiPassword.value);
+        if (includeSensitive && wifiSharePassword.checked && wifiPassword.value) {
+          url.searchParams.set("wifiPassword", wifiPassword.value);
         }
 
         url.searchParams.set("wifiSecurity", wifiSecurity.value);
@@ -644,7 +652,7 @@
         return number ? `sms:${number}${body ? `?body=${encodeURIComponent(body)}` : ""}` : "";
       }
       case "wifi": {
-        const ssid = wifiSsid.value.trim();
+        const ssid = wifiSsid.value;
 
         if (!ssid) {
           return "";

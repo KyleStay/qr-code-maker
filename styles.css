@@ -548,7 +548,6 @@ body.share-mode .qr-stage {
 }
 
 body.share-mode .scan-status,
-body.share-mode .message,
 body.share-mode .share-link-panel {
   display: none;
 }
